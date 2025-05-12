@@ -2,7 +2,6 @@
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.68.0-green)](https://fastapi.tiangolo.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
 
 API CRUD para gestão de livros em uma biblioteca, desenvolvida com FastAPI e SQLite. Tem por objetivo servir como material para estudos de desenvolvimento de APIs RESTful.
 
@@ -56,7 +55,7 @@ http://localhost:8000/redoc
 
 ![database_diagram](https://github.com/user-attachments/assets/cf52434a-fd5c-410c-80ee-7c27960d2357)
 
-<br>Para recriar o banco de dados:
+<br> O banco de dados se encontra acoplado ao projeto, não sendo necessário sua criação. mas caso necessite recria-lo basta utilizar o seguinte comando:
 
 ```bash
 sqlite3 biblioteca.db < sqlite_script.txt
