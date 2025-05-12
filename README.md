@@ -5,7 +5,7 @@
 
 API CRUD para gestão de livros em uma biblioteca, desenvolvida com FastAPI e SQLite. Tem por objetivo servir como material para estudos de desenvolvimento de APIs RESTful.
 
-## 📚 Recursos
+## 📚 Recursos Esperados
 - Operações CRUD
 - Banco de dados SQLite integrado
 - Documentação interativa com Swagger UI e ReDoc
@@ -55,7 +55,7 @@ http://localhost:8000/redoc
 
 ![database_diagram](https://github.com/user-attachments/assets/cf52434a-fd5c-410c-80ee-7c27960d2357)
 
-<br> O banco de dados se encontra acoplado ao projeto, não sendo necessário sua criação. mas caso necessite recria-lo basta utilizar o seguinte comando:
+<br> O banco de dados encontra-se integrado ao projeto, não sendo necessária sua criação manual. Entretanto, caso seja necessário recriá-lo, execute o seguinte comando:
 
 ```bash
 sqlite3 biblioteca.db < sqlite_script.txt
