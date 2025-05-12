@@ -4,6 +4,7 @@ from app.database import SessionLocal
 from app.models.models import Autor
 from app.schemas.autor_schema import AutorCreate, AutorUpdatePATCH, AutorUpdatePUT
 
+# router = APIRouter(prefix="/autores", tags="AUTORES")
 router = APIRouter()
 
 
@@ -16,14 +17,14 @@ def get_db():
         db.close()
 
 
-@router.get("/autores/")
+@router.get("/")
 def listar_autores(db: Session = Depends(get_db)):
     autores = db.query(Autor).all()
     return autores
 
 
 @router.get(
-    "/autores/{autor_id}",
+    "/{autor_id}",
     responses={
         status.HTTP_200_OK: {
             "description": "Autor encontrado com sucesso",
@@ -53,7 +54,7 @@ def obter_autor(autor_id: int, db: Session = Depends(get_db)):
 
 
 @router.post(
-    "/autores/",
+    "/",
     status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_201_CREATED: {
@@ -86,7 +87,7 @@ def criar_autor(autor: AutorCreate, db: Session = Depends(get_db)):
 
 
 @router.put(
-    "/autores/{autor_id}",
+    "/{autor_id}",
     responses={
         200: {"description": "Autor atualizado com sucesso"},
         404: {"description": "Autor não encontrado"},
@@ -119,7 +120,7 @@ def atualizar_autor_put(
 
 
 @router.patch(
-    "/autores/{autor_id}",
+    "/{autor_id}",
     responses={
         200: {"description": "Autor parcialmente atualizado"},
         404: {"description": "Autor não encontrado"},
@@ -161,7 +162,7 @@ def atualizar_autor_patch(
 
 
 @router.delete(
-    "/autores/{autor_id}",
+    "/{autor_id}",
     status_code=status.HTTP_200_OK,
     responses={
         status.HTTP_200_OK: {

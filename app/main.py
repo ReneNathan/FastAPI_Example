@@ -9,7 +9,7 @@ app = FastAPI(
         "Tem como objetivo servir como material de estudo, simulando uma API de controle de fluxo de uma biblioteca.\n\n"
         "[Repositório no GitHub](https://github.com/ReneNathan/FastAPI_Example)"
     ),
-    version="0.1.1",
+    version="0.0.2",
 )
 
 
@@ -19,10 +19,10 @@ async def startup_event():
         raise RuntimeError("Falha crítica: Banco de dados não disponível")
 
 
-app.include_router(autores.router, prefix="/api", tags=["autores"])
-# app.include_router(livros.router, prefix="/api", tags=["livros"])
-# app.include_router(usuarios.router, prefix="/api", tags=["usuarios"])
-# app.include_router(emprestimos.router, prefix="/api", tags=["emprestimos"])
+app.include_router(autores.router, prefix="/api/autores", tags=["AUTORES"])
+app.include_router(livros.router, prefix="/api/livros", tags=["LIVROS"])
+app.include_router(usuarios.router, prefix="/api/usuarios", tags=["USUARIOS"])
+app.include_router(emprestimos.router, prefix="/api/emprestimos", tags=["EMPRESTIMOS"])
 
 
 @app.get("/")
