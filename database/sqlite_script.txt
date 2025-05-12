@@ -1,0 +1,92 @@
+-- Habilitar chaves estrangeiras
+PRAGMA foreign_keys = ON;
+
+-- Apagar tabelas se existirem
+DROP TABLE IF EXISTS borrowals;
+DROP TABLE IF EXISTS books;
+DROP TABLE IF EXISTS authors;
+DROP TABLE IF EXISTS borrowers;
+
+-- Criar tabela de autores
+CREATE TABLE authors (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    country TEXT
+);
+
+-- Criar tabela de livros
+CREATE TABLE books (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    author_id INTEGER,
+    publication_year INTEGER,
+    genre TEXT,
+    FOREIGN KEY (author_id) REFERENCES authors(id)
+);
+
+-- Criar tabela de usuários
+CREATE TABLE borrowers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE,
+    phone TEXT
+);
+
+-- Criar tabela de empréstimos
+CREATE TABLE borrowals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    book_id INTEGER,
+    borrower_id INTEGER,
+    borrow_date DATE NOT NULL,
+    return_date DATE,
+    FOREIGN KEY (book_id) REFERENCES books(id),
+    FOREIGN KEY (borrower_id) REFERENCES borrowers(id)
+);
+
+-- Inserir autores
+INSERT INTO authors (name, country) VALUES
+    ('Machado de Assis', 'Brasil'),
+    ('Clarice Lispector', 'Brasil'),
+    ('J.K. Rowling', 'Reino Unido'),
+    ('George Orwell', 'Reino Unido'),
+    ('Agatha Christie', 'Reino Unido'),
+    ('Gabriel García Márquez', 'Colômbia');
+
+-- Inserir livros
+INSERT INTO books (title, author_id, publication_year, genre) VALUES
+    ('Dom Casmurro', 1, 1899, 'Romance'),
+    ('Memórias Póstumas de Brás Cubas', 1, 1881, 'Romance'),
+    ('A Hora da Estrela', 2, 1977, 'Ficção'),
+    ('Harry Potter e a Pedra Filosofal', 3, 1997, 'Fantasia'),
+    ('1984', 4, 1949, 'Ficção Científica'),
+    ('A Revolução dos Bichos', 4, 1945, 'Sátira'),
+    ('Assassinato no Expresso do Oriente', 5, 1934, 'Mistério'),
+    ('Cem Anos de Solidão', 6, 1967, 'Realismo Mágico'),
+    ('Crônica de uma Morte Anunciada', 6, 1981, 'Romance'),
+    ('Harry Potter e o Cálice de Fogo', 3, 2000, 'Fantasia'),
+    ('O Retrato de Dorian Gray', 4, 1890, 'Ficção'),
+    ('O Amor nos Tempos do Cólera', 6, 1985, 'Romance');
+
+-- Inserir usuários
+INSERT INTO borrowers (name, email, phone) VALUES
+    ('João Silva', 'joao@email.com', '(11) 9999-1111'),
+    ('Maria Souza', 'maria@email.com', '(21) 8888-2222'),
+    ('Pedro Oliveira', 'pedro@email.com', '(31) 7777-3333'),
+    ('Ana Costa', 'ana@email.com', '(41) 6666-4444'),
+    ('Carlos Mendes', 'carlos@email.com', '(51) 5555-5555'),
+    ('Fernanda Lima', 'fernanda@email.com', '(61) 4444-6666');
+
+-- Inserir empréstimos
+INSERT INTO borrowals (book_id, borrower_id, borrow_date, return_date) VALUES
+    (1, 1, '2023-01-05', '2023-01-20'),
+    (3, 2, '2023-02-10', '2023-02-25'),
+    (5, 3, '2023-03-15', NULL),
+    (7, 4, '2023-04-20', '2023-05-05'),
+    (2, 5, '2023-05-25', NULL),
+    (4, 6, '2023-06-01', '2023-06-16'),
+    (6, 1, '2023-07-10', '2023-07-25'),
+    (8, 2, '2023-08-15', NULL),
+    (9, 3, '2023-09-20', '2023-10-05'),
+    (10, 4, '2023-10-25', NULL),
+    (11, 5, '2023-11-01', '2023-11-16'),
+    (12, 6, '2023-12-10', NULL);
