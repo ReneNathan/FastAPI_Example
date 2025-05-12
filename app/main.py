@@ -5,11 +5,11 @@ from app.database import verificar_conexao
 app = FastAPI(
     title="Biblioteca API",
     description=(
-        "API básica em Python utilizando FastAPI. "
-        "Tem como objetivo servir como material de estudo, simulando uma API de controle de fluxo de uma biblioteca. "
-        "Repositório: https://github.com/ReneNathan/FastAPI_Example"
+        "API básica em Python utilizando FastAPI.\n\n"
+        "Tem como objetivo servir como material de estudo, simulando uma API de controle de fluxo de uma biblioteca.\n\n"
+        "[Repositório no GitHub](https://github.com/ReneNathan/FastAPI_Example)"
     ),
-    version="0.1.0",
+    version="0.1.1",
 )
 
 

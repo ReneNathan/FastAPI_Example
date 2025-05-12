@@ -1,1 +1,4 @@
 https://api-bibliote-estudo-crud-ac46c8c9300f.herokuapp.com/docs
+
+Para fazer Deploy:  = git push heroku main
+para rodar localmete =  uvicorn app.main:app --reload
