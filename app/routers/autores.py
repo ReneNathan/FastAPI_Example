@@ -175,6 +175,14 @@ def atualizar_autor_patch(
                 "application/json": {"example": {"detail": "Autor não encontrado"}}
             },
         },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "Autor possui livros vinculados",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Autor possui livros vinculados"}
+                }
+            },
+        },
     },
 )
 def excluir_autor(autor_id: int, db: Session = Depends(get_db)):
@@ -196,7 +204,13 @@ def excluir_autor(autor_id: int, db: Session = Depends(get_db)):
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao excluir autor: {str(e)}",
-        )
+        if "locked" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Autor possui livros vinculados",
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Erro ao excluir autor: {str(e)}",
+            )

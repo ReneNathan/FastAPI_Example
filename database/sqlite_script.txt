@@ -21,7 +21,7 @@ CREATE TABLE books (
     author_id INTEGER,
     publication_year INTEGER,
     genre TEXT,
-    FOREIGN KEY (author_id) REFERENCES authors(id)
+    FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE RESTRICT
 );
 
 -- Criar tabela de usuários
@@ -39,8 +39,8 @@ CREATE TABLE borrowals (
     borrower_id INTEGER,
     borrow_date DATE NOT NULL,
     return_date DATE,
-    FOREIGN KEY (book_id) REFERENCES books(id),
-    FOREIGN KEY (borrower_id) REFERENCES borrowers(id)
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE RESTRICT,
+    FOREIGN KEY (borrower_id) REFERENCES borrowers(id) ON DELETE RESTRICT
 );
 
 -- Inserir autores
@@ -50,7 +50,8 @@ INSERT INTO authors (name, country) VALUES
     ('J.K. Rowling', 'Reino Unido'),
     ('George Orwell', 'Reino Unido'),
     ('Agatha Christie', 'Reino Unido'),
-    ('Gabriel García Márquez', 'Colômbia');
+    ('Gabriel García Márquez', 'Colômbia'),
+    ('Stephen King', 'Estados Unidos');
 
 -- Inserir livros
 INSERT INTO books (title, author_id, publication_year, genre) VALUES
@@ -65,7 +66,9 @@ INSERT INTO books (title, author_id, publication_year, genre) VALUES
     ('Crônica de uma Morte Anunciada', 6, 1981, 'Romance'),
     ('Harry Potter e o Cálice de Fogo', 3, 2000, 'Fantasia'),
     ('O Retrato de Dorian Gray', 4, 1890, 'Ficção'),
-    ('O Amor nos Tempos do Cólera', 6, 1985, 'Romance');
+    ('O Amor nos Tempos do Cólera', 6, 1985, 'Romance'),
+    ('It: A coisa', 7, 2014, 'Terror'),
+    ('A hora do lobisomem', 7, 2017, 'Terror');
 
 -- Inserir usuários
 INSERT INTO borrowers (name, email, phone) VALUES
