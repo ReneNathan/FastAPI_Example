@@ -94,7 +94,7 @@ def criar_autor(autor: AutorCreate, db: Session = Depends(get_db)):
         400: {"description": "Dados inválidos"},
     },
 )
-def atualizar_autor_put(
+def atualizar_autor(
     autor_id: int, autor_data: AutorUpdatePUT, db: Session = Depends(get_db)
 ):
     """
@@ -127,7 +127,7 @@ def atualizar_autor_put(
         400: {"description": "Dados inválidos ou nenhum campo para atualizar"},
     },
 )
-def atualizar_autor_patch(
+def atualizar_autor(
     autor_id: int, autor_data: AutorUpdatePATCH, db: Session = Depends(get_db)
 ):
     """

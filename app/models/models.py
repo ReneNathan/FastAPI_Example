@@ -29,8 +29,9 @@ class Livro(Base):
 
 class Emprestimo(Base):
     __tablename__ = "borrowals"
+
     id = Column(Integer, primary_key=True, index=True)
-    book_id = Column(Integer, ForeignKey("books.id"))
-    borrower_id = Column(Integer, ForeignKey("borrower_id"))
-    borrow_date = Column(String)
-    return_date = Column(String)
+    book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
+    borrower_id = Column(Integer, ForeignKey("borrowers.id"), nullable=False)
+    borrow_date = Column(Date, nullable=False)
+    return_date = Column(Date)

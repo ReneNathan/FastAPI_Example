@@ -139,7 +139,7 @@ def criar_livro(livro: LivroCreate, db: Session = Depends(get_db)):
         },
     },
 )
-def atualizar_livro_put(
+def atualizar_livro(
     livro_id: int, livro_data: LivroUpdatePUT, db: Session = Depends(get_db)
 ):
     # Verifica se o livro existe
@@ -192,7 +192,7 @@ def atualizar_livro_put(
         },
     },
 )
-def atualizar_livro_patch(
+def atualizar_livro(
     livro_id: int, livro_data: LivroUpdatePATCH, db: Session = Depends(get_db)
 ):
     livro = db.query(Livro).filter(Livro.id == livro_id).first()
