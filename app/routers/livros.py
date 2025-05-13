@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.models import Livro, Autor  ##Um livro deve pertencer a um autor
@@ -257,3 +258,66 @@ def excluir_livro(livro_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao excluir livro: {str(e)}",
         )
+
+
+##-----------------------------------------------------------------
+##ENDPOINTS ESPECIFICOS
+
+
+# Endpoint: Buscar livros por ID do autor
+@router.get("/autor/id/{autor_id}", response_model=list[dict])
+def listar_livros_por_autor_id(autor_id: int, db: Session = Depends(get_db)):
+    livros = buscar_livros_por_autor_id(db, autor_id)
+    if not livros:
+        raise HTTPException(
+            status_code=404, detail="Nenhum livro encontrado para este autor."
+        )
+
+    return [
+        {
+            "id": livro.id,
+            "titulo": livro.title,
+            "ano": livro.publication_year,
+            "genero": livro.genre,
+        }
+        for livro in livros
+    ]
+
+
+# Endpoint: Buscar livros por nome do autor
+@router.get("/autor/nome/{nome}", response_model=list[dict])
+def listar_livros_por_autor_nome(nome: str, db: Session = Depends(get_db)):
+    livros = buscar_livros_por_autor_nome(db, nome)
+    if not livros:
+        raise HTTPException(
+            status_code=404, detail="Nenhum livro encontrado para este autor."
+        )
+
+    return [
+        {
+            "id": livro.id,
+            "titulo": livro.title,
+            "ano": livro.publication_year,
+            "genero": livro.genre,
+        }
+        for livro in livros
+    ]
+
+
+##----------------------------------------------------------
+##FUNÇÕES DOS ENDPOINTS ESPECIFICOS
+# Função utilitária: buscar livros por autor_id
+def buscar_livros_por_autor_id(db: Session, autor_id: int):
+    return db.query(Livro).filter(Livro.author_id == autor_id).all()
+
+
+# Função utilitária: buscar livros por nome do autor (parcial ou completo)
+def buscar_livros_por_autor_nome(db: Session, nome: str):
+    return (
+        db.query(Livro)
+        .join(Autor)
+        .filter(
+            Autor.name.ilike(f"%{nome}%")
+        )  # busca insensível a maiúsculas/minúsculas
+        .all()
+    )

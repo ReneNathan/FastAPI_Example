@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
-from app.models.models import Autor
+from app.models.models import Autor, Livro
 from app.schemas.autor_schema import AutorCreate, AutorUpdatePATCH, AutorUpdatePUT
 
 # router = APIRouter(prefix="/autores", tags="AUTORES")
@@ -21,6 +22,38 @@ def get_db():
 def listar_autores(db: Session = Depends(get_db)):
     autores = db.query(Autor).all()
     return autores
+
+
+# Endpoint: Total de livros por autor
+@router.get("/quantidade-de-livros", response_model=list[dict])
+def quantidade_de_livros(db: Session = Depends(get_db)):
+    autores = db.query(Autor).all()
+
+    if not autores:
+        raise HTTPException(status_code=404, detail="Nenhum autor encontrado.")
+
+    resultado = []
+    for autor in autores:
+        livros = db.query(Livro).filter(Livro.author_id == autor.id).all()
+
+        resultado.append(
+            {
+                "id": autor.id,
+                "autor": autor.name,
+                "total_livros": len(livros),
+                "livros": [
+                    {
+                        "id": livro.id,
+                        "titulo": livro.title,
+                        "ano": livro.publication_year,
+                        "genero": livro.genre,
+                    }
+                    for livro in livros
+                ],
+            }
+        )
+
+    return resultado
 
 
 @router.get(

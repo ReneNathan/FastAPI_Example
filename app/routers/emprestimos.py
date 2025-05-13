@@ -147,3 +147,19 @@ def excluir_emprestimo(emprestimo_id: int, db: Session = Depends(get_session_loc
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao excluir: {str(e)}")
+
+
+@router.get("/por-usuario/{usuario_id}", response_model=list[BorrowalResponse])
+def listar_emprestimos_por_usuario(
+    usuario_id: int, db: Session = Depends(get_session_local)
+):
+    emprestimos = (
+        db.query(Emprestimo).filter(Emprestimo.borrower_id == usuario_id).all()
+    )
+
+    if not emprestimos:
+        raise HTTPException(
+            status_code=404, detail="Nenhum empréstimo encontrado para este usuário."
+        )
+
+    return emprestimos
