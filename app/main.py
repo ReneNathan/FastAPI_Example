@@ -9,7 +9,7 @@ app = FastAPI(
         "Tem como objetivo servir como material de estudo, simulando uma API de controle de fluxo de uma biblioteca.\n\n"
         "[Repositório no GitHub](https://github.com/ReneNathan/FastAPI_Example)"
     ),
-    version="0.0.2",
+    version="1.0.0",
 )
 
 
