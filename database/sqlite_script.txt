@@ -1,47 +1,166 @@
 -- Habilitar chaves estrangeiras
 PRAGMA foreign_keys = ON;
 
--- Apagar tabelas se existirem
+-- Apagar tabelas se existirem (em ordem segura)
+DROP TABLE IF EXISTS borrowal_history;
+DROP TABLE IF EXISTS logs;
 DROP TABLE IF EXISTS borrowals;
+DROP TABLE IF EXISTS stock;
 DROP TABLE IF EXISTS books;
-DROP TABLE IF EXISTS authors;
+DROP TABLE IF EXISTS genres;
 DROP TABLE IF EXISTS borrowers;
+DROP TABLE IF EXISTS authors;
 
 -- Criar tabela de autores
 CREATE TABLE authors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    country TEXT
+    country TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Criar tabela de gêneros (normalizada)
+CREATE TABLE genres (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
 );
 
 -- Criar tabela de livros
 CREATE TABLE books (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
-    author_id INTEGER,
-    publication_year INTEGER,
-    genre TEXT,
-    FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE RESTRICT
+    author_id INTEGER NOT NULL,
+    genre_id INTEGER NOT NULL,
+    publication_year INTEGER CHECK (publication_year > 0),
+    FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE RESTRICT,
+    FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE RESTRICT
 );
 
--- Criar tabela de usuários
+
+-- Criar tabela de usuários com validações
 CREATE TABLE borrowers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    email TEXT UNIQUE,
-    phone TEXT
+    email TEXT UNIQUE NOT NULL CHECK (email LIKE '%@%'),
+    phone TEXT, -- Validação deve ser feita no nível da aplicação
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Criar tabela de estoque com restrições
+CREATE TABLE stock (
+    book_id INTEGER PRIMARY KEY,
+    quantity INTEGER NOT NULL DEFAULT 5 CHECK (quantity >= 0),
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
 );
 
 -- Criar tabela de empréstimos
 CREATE TABLE borrowals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    book_id INTEGER,
-    borrower_id INTEGER,
-    borrow_date DATE NOT NULL,
-    return_date DATE,
+    book_id INTEGER NOT NULL,
+    borrower_id INTEGER NOT NULL,
+    borrow_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    return_date DATE CHECK (return_date >= borrow_date),
     FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE RESTRICT,
     FOREIGN KEY (borrower_id) REFERENCES borrowers(id) ON DELETE RESTRICT
 );
+
+-- Tabela de histórico de empréstimos
+CREATE TABLE borrowal_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    book_id INTEGER NOT NULL,
+    borrower_id INTEGER NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('borrowed', 'returned')),
+    date DATE NOT NULL,
+    FOREIGN KEY (book_id) REFERENCES books(id),
+    FOREIGN KEY (borrower_id) REFERENCES borrowers(id)
+);
+
+-- Tabela de logs do sistema
+CREATE TABLE logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    action TEXT NOT NULL,
+    description TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Índices para performance
+CREATE INDEX idx_books_author ON books(author_id);
+CREATE INDEX idx_borrowals_book ON borrowals(book_id);
+CREATE INDEX idx_borrowals_borrower ON borrowals(borrower_id);
+
+-- TRIGGER: Verificar estoque antes de emprestar
+CREATE TRIGGER trg_check_stock_before_borrow
+BEFORE INSERT ON borrowals
+FOR EACH ROW
+BEGIN
+    -- Verifica se o livro está sem estoque
+    SELECT RAISE(ABORT, 'Estoque insuficiente para empréstimo')
+    WHERE (SELECT quantity FROM stock WHERE book_id = NEW.book_id) <= 0;
+END;
+
+-- TRIGGER: Processar novo empréstimo
+CREATE TRIGGER trg_borrowal_insert
+AFTER INSERT ON borrowals
+BEGIN
+    -- Atualizar estoque
+    UPDATE stock SET quantity = quantity - 1 WHERE book_id = NEW.book_id;
+
+    -- Registrar empréstimo no histórico
+    INSERT INTO borrowal_history (book_id, borrower_id, action, date)
+    VALUES (NEW.book_id, NEW.borrower_id, 'borrowed', NEW.borrow_date);
+
+    -- Log do sistema
+    INSERT INTO logs (action, description)
+    VALUES (
+        'BORROW',
+        'Livro ID ' || NEW.book_id ||
+        ' | Usuário ID ' || NEW.borrower_id ||
+        ' | Devolução: ' || COALESCE(NEW.return_date, 'Pendente')
+    );
+END;
+
+-- TRIGGER: Processar devolução
+CREATE TRIGGER trg_borrowal_return
+AFTER UPDATE OF return_date ON borrowals
+WHEN NEW.return_date IS NOT NULL AND OLD.return_date IS NULL
+BEGIN
+    -- Atualizar estoque
+    UPDATE stock SET quantity = quantity + 1 WHERE book_id = NEW.book_id;
+
+    -- Registrar devolução no histórico
+    INSERT INTO borrowal_history (book_id, borrower_id, action, date)
+    VALUES (NEW.book_id, NEW.borrower_id, 'returned', NEW.return_date);
+
+    -- Log com cálculo do atraso
+    INSERT INTO logs (action, description)
+    VALUES (
+        'RETURN',
+        'Livro ID ' || NEW.book_id ||
+        ' | Usuário ID ' || NEW.borrower_id ||
+        ' | Atraso: ' || CAST(
+            CASE
+                WHEN JULIANDAY(NEW.return_date) > JULIANDAY(OLD.borrow_date, '+30 days')
+                THEN (JULIANDAY(NEW.return_date) - JULIANDAY(OLD.borrow_date, '+30 days'))
+                ELSE 0
+            END AS INTEGER
+        ) || ' dias'
+    );
+END;
+
+-- TRIGGER: Ajustar estoque ao excluir empréstimo não devolvido
+CREATE TRIGGER trg_borrowal_delete
+AFTER DELETE ON borrowals
+WHEN OLD.return_date IS NULL
+BEGIN
+    UPDATE stock SET quantity = quantity + 1 WHERE book_id = OLD.book_id;
+
+    INSERT INTO logs (action, description)
+    VALUES (
+        'DELETE',
+        'Empréstimo ID ' || OLD.id ||
+        ' excluído | Estoque ajustado (+1)'
+    );
+END;
 
 -- Inserir autores
 INSERT INTO authors (name, country) VALUES
@@ -53,43 +172,47 @@ INSERT INTO authors (name, country) VALUES
     ('Gabriel García Márquez', 'Colômbia'),
     ('Stephen King', 'Estados Unidos');
 
+-- Inserir gêneros
+INSERT INTO genres (name) VALUES
+    ('Romance'), ('Ficção'), ('Fantasia'),
+    ('Ficção Científica'), ('Sátira'), ('Mistério'),
+    ('Realismo Mágico'), ('Terror');
+
 -- Inserir livros
-INSERT INTO books (title, author_id, publication_year, genre) VALUES
-    ('Dom Casmurro', 1, 1899, 'Romance'),
-    ('Memórias Póstumas de Brás Cubas', 1, 1881, 'Romance'),
-    ('A Hora da Estrela', 2, 1977, 'Ficção'),
-    ('Harry Potter e a Pedra Filosofal', 3, 1997, 'Fantasia'),
-    ('1984', 4, 1949, 'Ficção Científica'),
-    ('A Revolução dos Bichos', 4, 1945, 'Sátira'),
-    ('Assassinato no Expresso do Oriente', 5, 1934, 'Mistério'),
-    ('Cem Anos de Solidão', 6, 1967, 'Realismo Mágico'),
-    ('Crônica de uma Morte Anunciada', 6, 1981, 'Romance'),
-    ('Harry Potter e o Cálice de Fogo', 3, 2000, 'Fantasia'),
-    ('O Retrato de Dorian Gray', 4, 1890, 'Ficção'),
-    ('O Amor nos Tempos do Cólera', 6, 1985, 'Romance'),
-    ('It: A coisa', 7, 2014, 'Terror'),
-    ('A hora do lobisomem', 7, 2017, 'Terror');
+INSERT INTO books (title, author_id, genre_id, publication_year) VALUES
+    ('Dom Casmurro', 1, 1, 1899),
+    ('Memórias Póstumas de Brás Cubas', 1, 1, 1881),
+    ('A Hora da Estrela', 2, 2, 1977),
+    ('Harry Potter e a Pedra Filosofal', 3, 3, 1997),
+    ('1984', 4, 4, 1949),
+    ('A Revolução dos Bichos', 4, 5, 1945),
+    ('Assassinato no Expresso do Oriente', 5, 6, 1934),
+    ('Cem Anos de Solidão', 6, 7, 1967),
+    ('Crônica de uma Morte Anunciada', 6, 1, 1981),
+    ('Harry Potter e o Cálice de Fogo', 3, 3, 2000),
+    ('O Retrato de Dorian Gray', 4, 1, 1890),
+    ('O Amor nos Tempos do Cólera', 6, 1, 1985),
+    ('It: A coisa', 7, 8, 2014),
+    ('A hora do lobisomem', 7, 8, 2017);
+
+-- Inserir estoque
+INSERT INTO stock (book_id, quantity)
+SELECT id, 5 FROM books;
 
 -- Inserir usuários
 INSERT INTO borrowers (name, email, phone) VALUES
-    ('João Silva', 'joao@email.com', '(11) 9999-1111'),
-    ('Maria Souza', 'maria@email.com', '(21) 8888-2222'),
-    ('Pedro Oliveira', 'pedro@email.com', '(31) 7777-3333'),
-    ('Ana Costa', 'ana@email.com', '(41) 6666-4444'),
-    ('Carlos Mendes', 'carlos@email.com', '(51) 5555-5555'),
-    ('Fernanda Lima', 'fernanda@email.com', '(61) 4444-6666');
+    ('João Silva', 'joao@email.com', '+55 11 9999-1111'),
+    ('Maria Souza', 'maria@email.com', '+55 21 8888-2222'),
+    ('Pedro Oliveira', 'pedro@email.com', '+55 31 7777-3333'),
+    ('Ana Costa', 'ana@email.com', '+55 41 6666-4444'),
+    ('Carlos Mendes', 'carlos@email.com', '+55 51 5555-5555'),
+    ('Fernanda Lima', 'fernanda@email.com', '+55 61 4444-6666');
 
--- Inserir empréstimos
+-- Inserir empréstimos de teste
 INSERT INTO borrowals (book_id, borrower_id, borrow_date, return_date) VALUES
-    (1, 1, '2023-01-05', '2023-01-20'),
-    (3, 2, '2023-02-10', '2023-02-25'),
+    (1, 1, '2023-01-05', '2023-02-04'),
+    (3, 2, '2023-02-10', NULL),
     (5, 3, '2023-03-15', NULL),
-    (7, 4, '2023-04-20', '2023-05-05'),
-    (2, 5, '2023-05-25', NULL),
-    (4, 6, '2023-06-01', '2023-06-16'),
-    (6, 1, '2023-07-10', '2023-07-25'),
-    (8, 2, '2023-08-15', NULL),
-    (9, 3, '2023-09-20', '2023-10-05'),
-    (10, 4, '2023-10-25', NULL),
-    (11, 5, '2023-11-01', '2023-11-16'),
-    (12, 6, '2023-12-10', NULL);
+    (7, 4, '2023-04-20', NULL);
+
+ALTER TABLE books ADD COLUMN image TEXT;

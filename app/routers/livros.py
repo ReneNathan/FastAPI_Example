@@ -3,7 +3,12 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.models import Livro, Autor  ##Um livro deve pertencer a um autor
-from app.schemas.livro_schema import LivroCreate, LivroUpdatePUT, LivroUpdatePATCH
+from app.schemas.livro_schema import (
+    LivroCreate,
+    LivroUpdatePUT,
+    LivroResponse,
+    LivroUpdatePATCH,
+)
 
 router = APIRouter()
 
@@ -17,7 +22,10 @@ def get_db():
         db.close()
 
 
-@router.get("/")
+@router.get(
+    "/",
+    response_model=list[LivroResponse],
+)
 def listar_livros(db: Session = Depends(get_db)):
     livros = db.query(Livro).all()
     return livros
@@ -25,6 +33,7 @@ def listar_livros(db: Session = Depends(get_db)):
 
 @router.get(
     "/{livro_id}",
+    response_model=LivroResponse,
     responses={
         status.HTTP_200_OK: {
             "description": "Livro encontrado com sucesso",
@@ -33,9 +42,9 @@ def listar_livros(db: Session = Depends(get_db)):
                     "example": {
                         "id": 1,
                         "title": "O instituto",
-                        "author_id": "8",
+                        "author_id": 1,
                         "publication_year": "2019",
-                        "genre": "Suspense",
+                        "genre_id": 1,
                     }
                 }
             },
@@ -68,7 +77,7 @@ def obter_livro(livro_id: int, db: Session = Depends(get_db)):
                         "title": "Dom Casmurro",
                         "author_id": 1,
                         "publication_year": 1899,
-                        "genre": "Romance",
+                        "genre_id": 1,
                     }
                 }
             },
@@ -101,7 +110,8 @@ def criar_livro(livro: LivroCreate, db: Session = Depends(get_db)):
             title=livro.title,
             author_id=livro.author_id,
             publication_year=livro.publication_year,
-            genre=livro.genre,
+            genre_id=livro.genre_id,
+            image=livro.image,
         )
 
         db.add(novo_livro)
@@ -140,7 +150,7 @@ def criar_livro(livro: LivroCreate, db: Session = Depends(get_db)):
         },
     },
 )
-def atualizar_livro(
+def atualizar_livro_completo(
     livro_id: int, livro_data: LivroUpdatePUT, db: Session = Depends(get_db)
 ):
     # Verifica se o livro existe
@@ -158,13 +168,13 @@ def atualizar_livro(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Autor com ID {livro_data.author_id} não encontrado",
         )
-
     try:
         # Atualiza todos os campos
         livro.title = livro_data.title
         livro.author_id = livro_data.author_id
         livro.publication_year = livro_data.publication_year
-        livro.genre = livro_data.genre
+        livro.genre_id = livro_data.genre_id
+        livro.image = livro_data.image
 
         db.commit()
         db.refresh(livro)
@@ -193,7 +203,7 @@ def atualizar_livro(
         },
     },
 )
-def atualizar_livro(
+def atualizar_livro_parcial(
     livro_id: int, livro_data: LivroUpdatePATCH, db: Session = Depends(get_db)
 ):
     livro = db.query(Livro).filter(Livro.id == livro_id).first()
@@ -279,6 +289,7 @@ def listar_livros_por_autor_id(autor_id: int, db: Session = Depends(get_db)):
             "titulo": livro.title,
             "ano": livro.publication_year,
             "genero": livro.genre,
+            "imagem": livro.image,
         }
         for livro in livros
     ]
@@ -299,6 +310,7 @@ def listar_livros_por_autor_nome(nome: str, db: Session = Depends(get_db)):
             "titulo": livro.title,
             "ano": livro.publication_year,
             "genero": livro.genre,
+            "imagem": livro.image,
         }
         for livro in livros
     ]
