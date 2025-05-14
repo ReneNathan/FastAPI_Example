@@ -50,7 +50,7 @@ uvicorn app.main:app --reload
 🗄️ Estrutura do Banco de Dados
  <br>Diagrama do Banco de Dados
 
-![database_diagram](https://github.com/user-attachments/assets/cf52434a-fd5c-410c-80ee-7c27960d2357)
+![database_diagram](https://github.com/user-attachments/assets/b6d99ca0-4810-44a4-be68-406588dd080a)
 
 <br> O banco de dados encontra-se integrado ao projeto, não sendo necessária sua criação manual. Entretanto, caso seja necessário recriá-lo, execute o seguinte comando:
 
