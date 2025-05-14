@@ -45,9 +45,6 @@ pip install -r requirements.txt
 
 # 5. Executar aplicação
 uvicorn app.main:app --reload
-Acesse a documentação local:
-http://localhost:8000/docs
-http://localhost:8000/redoc
 ```
 
 🗄️ Estrutura do Banco de Dados
